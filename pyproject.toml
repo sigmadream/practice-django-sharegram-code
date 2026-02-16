@@ -9,4 +9,5 @@ dependencies = [
     "crispy-bootstrap5>=2025.6",
     "django>=6.0.2",
     "pillow>=12.1.1",
+    "pytest-django>=4.12.0",
 ]
