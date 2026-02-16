@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!q-)6jc02%l!fs(3#&%1gi_e_e07iyf_f1c-(0o1@$)*wb@-kk'
+SECRET_KEY = 'django-insecure-=+uff(iy(%%$aor=b(%+gjt3xwnk8%%m1l#qynu*el+rk2b%)('
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -37,6 +37,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # [추가] 사용자 정의 앱
+    'users',
+    'posts',
+    'links',
+    # [추가] 서드파티 앱
+    'crispy_forms',
+    'crispy_bootstrap5',    
 ]
 
 MIDDLEWARE = [
@@ -54,7 +61,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -102,16 +109,30 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
 
 USE_I18N = True
-
 USE_TZ = True
+
+# [추가] 국제화 설정
+LANGUAGE_CODE = 'ko-kr'
+TIME_ZONE = 'Asia/Seoul'
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
+# [추가] 정적 파일 설정
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# [추가] 미디어 파일 설정
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# [추가] crispy-forms 설정
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
+CRISPY_TEMPLATE_PACK = 'bootstrap5'
+
+# [추가] 인증 관련 설정
+LOGIN_REDIRECT_URL = 'posts:home'       # 로그인 성공 후 이동할 URL
+LOGIN_URL = 'users:login'               # 로그인이 필요할 때 이동할 URL
