@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}게시물 상세 - ImageShare{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{% url 'users:profile' post.user.username %}" class="text-decoration-none">
+                            <img src="{{ post.user.profile.profile_image.url }}" alt="{{ post.user.username }}"
+                                 class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                            <span class="fw-bold">{{ post.user.username }}</span>
+                        </a>
+                    </div>
+                    <div>
+                        <small class="text-muted me-3"><i class="bi bi-eye me-1"></i>조회수: {{ post.views }}</small>
+                        <small class="text-muted">{{ post.created_at|date:"Y년 m월 d일 H:i" }}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if post.image %}
+                    <img src="{{ post.image.url }}" alt="게시물 이미지" class="img-fluid rounded mb-3">
+                {% endif %}
+                <p class="card-text">{{ post.content }}</p>
+            </div>
+            {% if user == post.user %}
+                <div class="card-footer d-flex justify-content-end">
+                    <a href="{% url 'posts:post_update' post.id %}" class="btn btn-sm btn-outline-secondary me-2">
+                        <i class="bi bi-pencil me-1"></i>수정
+                    </a>
+                    <a href="{% url 'posts:post_delete' post.id %}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i>삭제
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 이전/다음 게시물 네비게이션 -->
+        <div class="d-flex justify-content-between mb-4">
+            {% if prev_post %}
+                <a href="{% url 'posts:post_detail' prev_post.id %}" class="btn btn-outline-dark">
+                    <i class="bi bi-arrow-left me-1"></i> 이전 게시물
+                </a>
+            {% else %}
+                <button class="btn btn-outline-secondary" disabled>
+                    <i class="bi bi-arrow-left me-1"></i> 이전 게시물
+                </button>
+            {% endif %}
+
+            <a href="{% url 'posts:home' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-house me-1"></i> 홈으로
+            </a>
+
+            {% if next_post %}
+                <a href="{% url 'posts:post_detail' next_post.id %}" class="btn btn-outline-dark">
+                    다음 게시물 <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            {% else %}
+                <button class="btn btn-outline-secondary" disabled>
+                    다음 게시물 <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

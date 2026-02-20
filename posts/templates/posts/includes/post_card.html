@@ -1,0 +1,36 @@
+{% for post in posts %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{% url 'users:profile' post.user.username %}" class="text-decoration-none">
+                        <img src="{{ post.user.profile.profile_image.url }}" alt="{{ post.user.username }}"
+                             class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                        <span class="fw-bold">{{ post.user.username }}</span>
+                    </a>
+                </div>
+                <small class="text-muted">{{ post.created_at|date:"Y년 m월 d일 H:i" }}</small>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if post.thumbnail %}
+                <a href="{% url 'posts:post_detail' post.id %}">
+                    <img src="{{ post.thumbnail.url }}" alt="썸네일" class="img-fluid rounded mb-3">
+                </a>
+            {% elif post.image %}
+                <a href="{% url 'posts:post_detail' post.id %}">
+                    <img src="{{ post.image.url }}" alt="게시물 이미지" class="img-fluid rounded mb-3">
+                </a>
+            {% endif %}
+            <p class="card-text">{{ post.content }}</p>
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'posts:post_detail' post.id %}" class="text-decoration-none">
+                <i class="bi bi-chat me-1"></i> 상세보기
+            </a>
+            <small class="text-muted float-end"><i class="bi bi-eye me-1"></i>{{ post.views }}</small>
+        </div>
+    </div>
+{% empty %}
+    <div class="alert alert-info">아직 작성된 게시물이 없습니다.</div>
+{% endfor %}
