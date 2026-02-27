@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load crispy_forms_tags %}
 {% block title %}게시물 상세 - ImageShare{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
@@ -9,7 +10,7 @@
                     <div>
                         <a href="{% url 'users:profile' post.user.username %}" class="text-decoration-none">
                             <img src="{{ post.user.profile.profile_image.url }}" alt="{{ post.user.username }}"
-                                 class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
                             <span class="fw-bold">{{ post.user.username }}</span>
                         </a>
                     </div>
@@ -21,32 +22,73 @@
             </div>
             <div class="card-body">
                 {% if post.image %}
-                    <img src="{{ post.image.url }}" alt="게시물 이미지" class="img-fluid rounded mb-3">
+                <img src="{{ post.image.url }}" alt="게시물 이미지" class="img-fluid rounded mb-3">
                 {% endif %}
                 <p class="card-text">{{ post.content }}</p>
             </div>
             {% if user == post.user %}
-                <div class="card-footer d-flex justify-content-end">
-                    <a href="{% url 'posts:post_update' post.id %}" class="btn btn-sm btn-outline-secondary me-2">
-                        <i class="bi bi-pencil me-1"></i>수정
-                    </a>
-                    <a href="{% url 'posts:post_delete' post.id %}" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-trash me-1"></i>삭제
-                    </a>
-                </div>
+            <div class="card-footer d-flex justify-content-end">
+                <a href="{% url 'posts:post_update' post.id %}" class="btn btn-sm btn-outline-secondary me-2">
+                    <i class="bi bi-pencil me-1"></i>수정
+                </a>
+                <a href="{% url 'posts:post_delete' post.id %}" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash me-1"></i>삭제
+                </a>
+            </div>
             {% endif %}
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-chat"></i> 댓글 ({{ post.comments.count }})</h6>
+            </div>
+            <div class="card-body">
+                {% if user.is_authenticated %}
+                <form method="POST" class="mb-3">
+                    {% csrf_token %}
+                    {{ comment_form|crispy }}
+                    <button type="submit" class="btn btn-primary btn-sm mt-2">댓글 작성</button>
+                </form>
+                <hr>
+                {% endif %}
+
+                {% for comment in post.comments.all %}
+                <div class="d-flex mb-3">
+                    <a href="{% url 'users:profile' comment.user.username %}">
+                        <img src="{{ comment.user.profile.profile_image.url }}" class="profile-img me-2"
+                            alt="{{ comment.user.username }}" style="width: 40px; height: 40px; object-fit: cover;">
+                    </a>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{% url 'users:profile' comment.user.username %}"
+                                    class="fw-bold text-decoration-none text-dark">{{ comment.user.username }}</a>
+                                <small class="text-muted">{{ comment.created_at|timesince }} 전</small>
+                            </div>
+                            {% if user == comment.user %}
+                            <a href="{% url 'posts:comment_delete' comment.pk %}"
+                                class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                            {% endif %}
+                        </div>
+                        <p class="mb-0 mt-1">{{ comment.content }}</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">아직 댓글이 없습니다.</p>
+                {% endfor %}
+            </div>
         </div>
 
         <!-- 이전/다음 게시물 네비게이션 -->
         <div class="d-flex justify-content-between mb-4">
             {% if prev_post %}
-                <a href="{% url 'posts:post_detail' prev_post.id %}" class="btn btn-outline-dark">
-                    <i class="bi bi-arrow-left me-1"></i> 이전 게시물
-                </a>
+            <a href="{% url 'posts:post_detail' prev_post.id %}" class="btn btn-outline-dark">
+                <i class="bi bi-arrow-left me-1"></i> 이전 게시물
+            </a>
             {% else %}
-                <button class="btn btn-outline-secondary" disabled>
-                    <i class="bi bi-arrow-left me-1"></i> 이전 게시물
-                </button>
+            <button class="btn btn-outline-secondary" disabled>
+                <i class="bi bi-arrow-left me-1"></i> 이전 게시물
+            </button>
             {% endif %}
 
             <a href="{% url 'posts:home' %}" class="btn btn-outline-secondary">
@@ -54,15 +96,16 @@
             </a>
 
             {% if next_post %}
-                <a href="{% url 'posts:post_detail' next_post.id %}" class="btn btn-outline-dark">
-                    다음 게시물 <i class="bi bi-arrow-right ms-1"></i>
-                </a>
+            <a href="{% url 'posts:post_detail' next_post.id %}" class="btn btn-outline-dark">
+                다음 게시물 <i class="bi bi-arrow-right ms-1"></i>
+            </a>
             {% else %}
-                <button class="btn btn-outline-secondary" disabled>
-                    다음 게시물 <i class="bi bi-arrow-right ms-1"></i>
-                </button>
+            <button class="btn btn-outline-secondary" disabled>
+                다음 게시물 <i class="bi bi-arrow-right ms-1"></i>
+            </button>
             {% endif %}
         </div>
     </div>
+
 </div>
 {% endblock %}

@@ -9,15 +9,19 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.contrib.auth.models import User
+from django.db.models import Q
+from django.views.decorators.http import require_POST
 from PIL import Image
 # from links.models import Link
-from .forms import PostForm
-from .models import Post
+from .forms import PostForm, CommentForm
+from .models import Post, Comment
 
 
 def generate_random_image():
     """랜덤 컬러의 400x400 이미지를 생성합니다."""
-    color = (random.randint(50, 220), random.randint(50, 220), random.randint(50, 220))
+    color = (random.randint(50, 220), random.randint(
+        50, 220), random.randint(50, 220))
     img = Image.new('RGB', (400, 400), color)
     for i in range(0, 400, 40):
         lighter = tuple(min(c + 30, 255) for c in color)
@@ -48,10 +52,36 @@ def home(request):
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     Post.objects.filter(pk=pk).update(views=post.views + 1)
-
-    prev_post = Post.objects.filter(created_at__gt=post.created_at).order_by('created_at').first()
-    next_post = Post.objects.filter(created_at__lt=post.created_at).order_by('-created_at').first()
-    context = {'post': post, 'prev_post': prev_post, 'next_post': next_post}
+    if request.method == 'POST' and request.user.is_authenticated:
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.post = post
+            comment.user = request.user
+            comment.save()
+            messages.success(request, '댓글이 작성되었습니다.')
+            return redirect('posts:post_detail', pk=pk)
+    else:
+        comment_form = CommentForm()
+    # is_liked = False
+    # if request.user.is_authenticated:
+    #     is_liked = Like.objects.filter(user=request.user, post=post).exists()
+    # is_following = False
+    # if request.user.is_authenticated and request.user != post.user:
+    #     is_following = Follow.objects.filter(follower=request.user, following=post.user).exists()
+    prev_post = Post.objects.filter(
+        created_at__gt=post.created_at).order_by('created_at').first()
+    next_post = Post.objects.filter(
+        created_at__lt=post.created_at).order_by('-created_at').first()
+    context = {
+        'post': post,
+        'comment_form': comment_form,
+        # 'is_liked': is_liked,
+        # 'is_following': is_following,
+        # 'like_count': post.likes.count(),
+        'prev_post': prev_post,
+        'next_post': next_post,
+    }
     return render(request, 'posts/post_detail.html', context)
 
 
@@ -112,6 +142,19 @@ def post_delete(request, pk):
         return redirect('posts:home')
     return render(request, 'posts/post_confirm_delete.html', {'post': post})
 
+@login_required
+def comment_delete(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    if comment.user != request.user:
+        messages.error(request, '삭제 권한이 없습니다.')
+        return redirect('posts:post_detail', pk=comment.post.pk)
+    if request.method == 'POST':
+        post_pk = comment.post.pk
+        comment.delete()
+        messages.success(request, '댓글이 삭제되었습니다.')
+        return redirect('posts:post_detail', pk=post_pk)
+    return render(request, 'posts/comment_confirm_delete.html', {'comment': comment})
+
 
 def load_more_posts(request):
     page_number = request.GET.get('page', 1)
@@ -126,5 +169,6 @@ def load_more_posts(request):
     except (EmptyPage, PageNotAnInteger):
         return JsonResponse({'html': '', 'has_next': False})
 
-    html = render_to_string('posts/includes/post_card.html', {'posts': page_obj}, request=request)
+    html = render_to_string('posts/includes/post_card.html',
+                            {'posts': page_obj}, request=request)
     return JsonResponse({'html': html, 'has_next': page_obj.has_next()})

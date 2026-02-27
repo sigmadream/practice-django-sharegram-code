@@ -11,24 +11,28 @@ from PIL import Image
 
 
 class Post(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
-    content = models.TextField(max_length=500, verbose_name='내용')
-    image = models.ImageField(upload_to='post_images/', blank=True, verbose_name='이미지')
-    thumbnail = models.ImageField(upload_to='post_thumbnails/', blank=True, verbose_name='썸네일')
-    views = models.PositiveIntegerField(default=0, verbose_name='조회수')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
+    content = models.TextField(max_length=500, verbose_name="내용")
+    image = models.ImageField(
+        upload_to="post_images/", blank=True, verbose_name="이미지"
+    )
+    thumbnail = models.ImageField(
+        upload_to="post_thumbnails/", blank=True, verbose_name="썸네일"
+    )
+    views = models.PositiveIntegerField(default=0, verbose_name="조회수")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
-        verbose_name = '게시물'
-        verbose_name_plural = '게시물'
+        ordering = ["-created_at"]
+        verbose_name = "게시물"
+        verbose_name_plural = "게시물"
 
     def __str__(self):
-        return f'{self.user.username}: {self.content[:30]}'
+        return f"{self.user.username}: {self.content[:30]}"
 
     def get_absolute_url(self):
-        return reverse('posts:post_detail', kwargs={'pk': self.pk})
+        return reverse("posts:post_detail", kwargs={"pk": self.pk})
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
@@ -51,11 +55,27 @@ class Post(models.Model):
             img = Image.open(self.image.path)
             img.thumbnail((300, 300))
             thumb_io = BytesIO()
-            img_format = img.format or 'JPEG'
+            img_format = img.format or "JPEG"
             img.save(thumb_io, format=img_format)
             thumb_io.seek(0)
-            thumb_name = f'thumb_{os.path.basename(self.image.name)}'
+            thumb_name = f"thumb_{os.path.basename(self.image.name)}"
             self.thumbnail.save(thumb_name, ContentFile(thumb_io.read()), save=False)
             Post.objects.filter(pk=self.pk).update(thumbnail=self.thumbnail.name)
         except (FileNotFoundError, ValueError):
             pass
+
+
+class Comment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    content = models.TextField(max_length=200, verbose_name="내용")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = "댓글"
+        verbose_name_plural = "댓글"
+
+    def __str__(self):
+        return f"{self.user.username}: {self.content[:30]}"
