@@ -1,9 +1,11 @@
-# links/urls.py
-
 from django.urls import path
+from . import views
 
 app_name = 'links'
 
 urlpatterns = [
-    # 나중에 여기에 URL 패턴을 추가할 예정
+    path('', views.link_list, name='link_list'),
+    path('<int:pk>/', views.link_detail, name='link_detail'),
+    path('new/', views.link_create, name='link_create'),
+    path('<int:pk>/delete/', views.link_delete, name='link_delete'),
 ]

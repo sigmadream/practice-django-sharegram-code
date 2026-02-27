@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ link.title|default:"링크 상세" }} - ImageShare{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            {% if link.og_image %}
+            <img src="{{ link.og_image }}" class="card-img-top" alt="{{ link.title }}">
+            {% endif %}
+            <div class="card-body">
+                <h3>{{ link.title|default:link.url }}</h3>
+                <p>{{ link.description }}</p>
+                <a href="{{ link.url }}" target="_blank" class="btn btn-primary">원본 페이지 방문</a>
+                {% if user == link.user %}
+                <a href="{% url 'links:link_delete' link.pk %}" class="btn btn-outline-danger">삭제</a>
+                {% endif %}
+            </div>
+            <div class="card-footer text-muted">
+                {{ link.user.username }} | {{ link.created_at|date:"Y년 n월 j일 H:i" }}
+            </div>
+        </div>
+        <a href="{% url 'links:link_list' %}" class="btn btn-outline-secondary mt-3">목록으로</a>
+    </div>
+</div>
+{% endblock %}
