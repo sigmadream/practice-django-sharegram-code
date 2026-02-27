@@ -9,13 +9,10 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.contrib.auth.models import User
-from django.db.models import Q
 from django.views.decorators.http import require_POST
 from PIL import Image
-# from links.models import Link
 from .forms import PostForm, CommentForm
-from .models import Post, Comment
+from .models import Post, Comment, Like
 
 
 def generate_random_image():
@@ -63,9 +60,9 @@ def post_detail(request, pk):
             return redirect('posts:post_detail', pk=pk)
     else:
         comment_form = CommentForm()
-    # is_liked = False
-    # if request.user.is_authenticated:
-    #     is_liked = Like.objects.filter(user=request.user, post=post).exists()
+    is_liked = False
+    if request.user.is_authenticated:
+        is_liked = Like.objects.filter(user=request.user, post=post).exists()
     # is_following = False
     # if request.user.is_authenticated and request.user != post.user:
     #     is_following = Follow.objects.filter(follower=request.user, following=post.user).exists()
@@ -76,9 +73,9 @@ def post_detail(request, pk):
     context = {
         'post': post,
         'comment_form': comment_form,
-        # 'is_liked': is_liked,
+        'is_liked': is_liked,
+        'like_count': post.likes.count(),
         # 'is_following': is_following,
-        # 'like_count': post.likes.count(),
         'prev_post': prev_post,
         'next_post': next_post,
     }
@@ -172,3 +169,18 @@ def load_more_posts(request):
     html = render_to_string('posts/includes/post_card.html',
                             {'posts': page_obj}, request=request)
     return JsonResponse({'html': html, 'has_next': page_obj.has_next()})
+
+@login_required
+@require_POST
+def like_toggle(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    like, created = Like.objects.get_or_create(user=request.user, post=post)
+    if not created:
+        like.delete()
+        liked = False
+    else:
+        liked = True
+    like_count = post.likes.count()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'liked': liked, 'like_count': like_count})
+    return redirect('posts:post_detail', pk=pk)

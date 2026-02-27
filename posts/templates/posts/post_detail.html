@@ -20,11 +20,25 @@
                     </div>
                 </div>
             </div>
+            {% if post.image %}
+            <img src="{{ post.image.url }}" alt="게시물 이미지" class="img-fluid rounded mb-3">
+            {% endif %}
             <div class="card-body">
-                {% if post.image %}
-                <img src="{{ post.image.url }}" alt="게시물 이미지" class="img-fluid rounded mb-3">
-                {% endif %}
-                <p class="card-text">{{ post.content }}</p>
+                <div class="d-flex align-items-right gap-3 mb-2">
+                    {% if user.is_authenticated %}
+                    <form class="like-form d-inline" data-post-id="{{ post.pk }}"
+                        action="{% url 'posts:like_toggle' post.pk %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-like">
+                            <i class="bi {% if is_liked %} bi-heart-fill {% else %} bi-heart {% endif %}"></i>
+                        </button>
+                    </form>
+                    {% else %}
+                    <i class="bi bi-heart"></i>
+                    {% endif %}
+                    <span class="like-count">{{ like_count }}</span>
+                </div>
+                <p class="card-text mt-3">{{ post.content }}</p>
             </div>
             {% if user == post.user %}
             <div class="card-footer d-flex justify-content-end">
@@ -108,4 +122,29 @@
     </div>
 
 </div>
+{% endblock %}
+
+<!-- 좋아요 버튼 AJAX -->
+{% block extra_js %}
+<script>
+    $(document).on('submit', '.like-form', function (e) {
+        e.preventDefault();
+        var $form = $(this);
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'POST',
+            data: $form.serialize(),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function (data) {
+                var $icon = $form.find('i');
+                if (data.liked) {
+                    $icon.removeClass('bi-heart').addClass('bi-heart-fill text-danger');
+                } else {
+                    $icon.removeClass('bi-heart-fill text-danger').addClass('bi-heart');
+                }
+                $form.closest('.card-body').find('.like-count').text(data.like_count);
+            }
+        });
+    });
+</script>
 {% endblock %}
