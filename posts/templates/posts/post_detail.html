@@ -13,6 +13,16 @@
                                 class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
                             <span class="fw-bold">{{ post.user.username }}</span>
                         </a>
+                        {% if user.is_authenticated %}
+                        <form class="follow-form d-inline" data-username="{{ post.user.username }}"
+                            action="{% url 'posts:follow_toggle' post.user.username %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="btn btn-sm {% if is_following %}btn-secondary{% else %}btn-primary{% endif %} ms-2">
+                                {% if is_following %} 팔로잉 {% else %} 팔로우 {% endif %}
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                     <div>
                         <small class="text-muted me-3"><i class="bi bi-eye me-1"></i>조회수: {{ post.views }}</small>
@@ -20,9 +30,11 @@
                     </div>
                 </div>
             </div>
+
             {% if post.image %}
             <img src="{{ post.image.url }}" alt="게시물 이미지" class="img-fluid rounded mb-3">
             {% endif %}
+
             <div class="card-body">
                 <div class="d-flex align-items-right gap-3 mb-2">
                     {% if user.is_authenticated %}

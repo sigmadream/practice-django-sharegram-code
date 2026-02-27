@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
 from .forms import ProfileUpdateForm, UserRegisterForm, UserUpdateForm
+# from links.models import Link
+from posts.models import Follow, Like, Post
 
 
 def register(request):
@@ -21,10 +23,8 @@ def register(request):
 
 
 def profile(request, username):
-    # from links.models import Link
-    # from posts.models import Follow, Like, Post
     profile_user = get_object_or_404(User, username=username)
-    # user_posts = Post.objects.filter(user=profile_user)
+    user_posts = Post.objects.filter(user=profile_user)
     # user_links = Link.objects.filter(user=profile_user)[:5]
 
     # if request.user.is_authenticated:
@@ -35,20 +35,20 @@ def profile(request, username):
     #     for post in user_posts:
     #         post.is_liked = False
 
-    # is_following = False
-    # if request.user.is_authenticated and request.user != profile_user:
-    #     is_following = Follow.objects.filter(follower=request.user, following=profile_user).exists()
+    is_following = False
+    if request.user.is_authenticated and request.user != profile_user:
+        is_following = Follow.objects.filter(follower=request.user, following=profile_user).exists()
 
-    # followers_count = profile_user.followers.count()
-    # following_count = profile_user.following.count()
+    followers_count = profile_user.followers.count()
+    following_count = profile_user.following.count()
 
     context = {
         'profile_user': profile_user,
-        # 'posts': user_posts,
+        'posts': user_posts,
         # 'user_links': user_links,
-        # 'is_following': is_following,
-        # 'followers_count': followers_count,
-        # 'following_count': following_count,
+        'is_following': is_following,
+        'followers_count': followers_count,
+        'following_count': following_count,
     }
     return render(request, 'users/profile.html', context)
 

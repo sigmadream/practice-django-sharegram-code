@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}팔로잉 피드 - ImageShare{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-people"></i> 팔로잉 피드</h2>
+            {% if user.is_authenticated %}
+            <a href="{% url 'posts:post_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> 새 게시물
+            </a>
+            {% endif %}
+        </div>
+
+        {% if posts %}
+        <div id="post-container">
+            {% for post in posts %}
+            <div class="card mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <a href="{% url 'users:profile' post.user.username %}">
+                            <img src="{{ post.user.profile.profile_image.url }}" class="profile-img me-2"
+                                alt="{{ post.user.username }}">
+                        </a>
+                        <div>
+                            <a href="{% url 'users:profile' post.user.username %}"
+                                class="fw-bold text-decoration-none text-dark">{{ post.user.username }}</a>
+                            <small class="text-muted d-block">{{ post.created_at|date:"Y년 n월 j일 H:i" }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% if post.image %}
+                <img src="{{ post.image.url }}" class="card-img-top post-img" alt="게시물 이미지">
+                {% endif %}
+                <div class="card-body">
+                    <div class="mb-2">
+                        <form class="like-form d-inline" data-post-id="{{ post.pk }}"
+                            action="{% url 'posts:like_toggle' post.pk %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-like">
+                                <i class="bi {% if post.is_liked %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                            </button>
+                        </form>
+                        <span class="like-count">{{ post.likes.count }}</span>
+                        <span class="text-muted small">좋아요</span>
+                    </div>
+                    <p class="card-text">{{ post.content|truncatewords:30 }}</p>
+                    <a href="{% url 'posts:post_detail' post.pk %}" class="text-decoration-none">상세보기</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="loading-spinner" class="text-center d-none my-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div id="no-more-posts" class="alert alert-info text-center d-none my-4">
+            더 이상 표시할 게시물이 없습니다.
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-people display-4 text-muted"></i>
+                <h3 class="mt-3">아직 팔로우한 사용자의 게시물이 없습니다</h3>
+                <p class="text-muted">다른 사용자를 팔로우하여 그들의 게시물을 확인해보세요!</p>
+                <a href="{% url 'posts:home' %}" class="btn btn-primary">홈으로 이동</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        var nextPage = 2;
+        var isLoading = false;
+        var hasMore = {{ posts.has_next| yesno: "true,false"
+    }};
+
+    $(window).scroll(function () {
+        if (!isLoading && hasMore && $(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+            isLoading = true;
+            $('#loading-spinner').removeClass('d-none');
+            $.ajax({
+                url: '{% url "posts:following_feed" %}',
+                data: { page: nextPage },
+                success: function (data) {
+                    $('#loading-spinner').addClass('d-none');
+                    if (data.html) {
+                        $('#post-container').append(data.html);
+                        nextPage++;
+                        hasMore = data.has_next;
+                    }
+                    if (!hasMore) {
+                        $('#no-more-posts').removeClass('d-none');
+                    }
+                    isLoading = false;
+                },
+                error: function () {
+                    isLoading = false;
+                    $('#loading-spinner').addClass('d-none');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

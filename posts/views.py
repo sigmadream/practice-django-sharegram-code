@@ -6,13 +6,15 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from PIL import Image
 from .forms import PostForm, CommentForm
-from .models import Post, Comment, Like
+from users.models import User
+from .models import Post, Comment, Like, Follow
 
 
 def generate_random_image():
@@ -63,9 +65,9 @@ def post_detail(request, pk):
     is_liked = False
     if request.user.is_authenticated:
         is_liked = Like.objects.filter(user=request.user, post=post).exists()
-    # is_following = False
-    # if request.user.is_authenticated and request.user != post.user:
-    #     is_following = Follow.objects.filter(follower=request.user, following=post.user).exists()
+    is_following = False
+    if request.user.is_authenticated and request.user != post.user:
+        is_following = Follow.objects.filter(follower=request.user, following=post.user).exists()
     prev_post = Post.objects.filter(
         created_at__gt=post.created_at).order_by('created_at').first()
     next_post = Post.objects.filter(
@@ -75,7 +77,7 @@ def post_detail(request, pk):
         'comment_form': comment_form,
         'is_liked': is_liked,
         'like_count': post.likes.count(),
-        # 'is_following': is_following,
+        'is_following': is_following,
         'prev_post': prev_post,
         'next_post': next_post,
     }
@@ -184,3 +186,30 @@ def like_toggle(request, pk):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'liked': liked, 'like_count': like_count})
     return redirect('posts:post_detail', pk=pk)
+
+
+@login_required
+def follow_toggle(request, username):
+    target_user = get_object_or_404(User, username=username)
+    if request.user == target_user:
+        messages.warning(request, '자기 자신을 팔로우할 수 없습니다.')
+        return redirect('users:profile', username=username)
+    follow, created = Follow.objects.get_or_create(follower=request.user, following=target_user)
+    if not created:
+        follow.delete()
+        messages.info(request, f'{target_user.username}님을 언팔로우했습니다.')
+    else:
+        messages.success(request, f'{target_user.username}님을 팔로우합니다.')
+    return redirect('users:profile', username=username)
+
+@login_required
+def following_feed(request):
+    following_users = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    posts = Post.objects.filter(Q(user_id__in=following_users) | Q(user=request.user))
+    paginator = Paginator(posts, 5)
+    page_obj = paginator.get_page(1)
+    liked_post_ids = set(Like.objects.filter(user=request.user, post__in=page_obj.object_list).values_list('post_id', flat=True))
+    for post in page_obj:
+        post.is_liked = post.pk in liked_post_ids
+    context = {'posts': page_obj}
+    return render(request, 'posts/following_feed.html', context)
